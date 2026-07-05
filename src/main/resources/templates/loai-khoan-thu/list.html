@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Loại khoản thu')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/layout :: sidebar('loai-khoan-thu')}"></div>
+
+        <main class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Loại khoản thu</h4>
+                <a th:href="@{/loai-khoan-thu/them}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i>Thêm loại
+                </a>
+            </div>
+
+            <div th:replace="~{fragments/layout :: alerts}"></div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-hover table-bordered mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Tên loại</th>
+                            <th>Mô tả</th>
+                            <th class="text-center">Phân loại</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(danhSach)}">
+                            <td colspan="5" class="text-center text-muted py-3">Chưa có loại khoản thu nào.</td>
+                        </tr>
+                        <tr th:each="lkt, stat : ${danhSach}">
+                            <td th:text="${stat.count}"></td>
+                            <td th:text="${lkt.tenLoai}"></td>
+                            <td th:text="${lkt.moTa}"></td>
+                            <td class="text-center">
+                                <span th:if="${lkt.loaiApDung == null}" class="badge bg-secondary">Chưa phân loại</span>
+                                <div th:if="${lkt.loaiApDung != null}" class="d-inline-flex flex-wrap gap-1 justify-content-center">
+                                    <span th:if="${lkt.loaiApDung.name() == 'BAT_BUOC_DINH_KY' or lkt.loaiApDung.name() == 'BAT_BUOC_DOT_XUAT'}"
+                                          class="fee-tag fee-tag-required" style="font-size: 13.5px;">
+                                        <i class="bi bi-exclamation-circle"></i>Bắt buộc
+                                    </span>
+                                    <span th:if="${lkt.loaiApDung.name() == 'BAT_BUOC_DINH_KY'}"
+                                          class="fee-tag fee-tag-periodic" style="font-size: 13.5px;">
+                                        <i class="bi bi-arrow-repeat"></i>Định kỳ
+                                    </span>
+                                    <span th:if="${lkt.loaiApDung.name() == 'BAT_BUOC_DOT_XUAT'}"
+                                          class="fee-tag fee-tag-unexpected" style="font-size: 13.5px;">
+                                        <i class="bi bi-lightning"></i>Đột xuất
+                                    </span>
+                                    <span th:if="${lkt.loaiApDung.name() == 'TU_NGUYEN'}"
+                                          class="fee-tag fee-tag-voluntary" style="font-size: 13.5px;">
+                                        <i class="bi bi-heart"></i>Tự nguyện
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <a th:href="@{/loai-khoan-thu/sua/{id}(id=${lkt.id})}" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="#confirmActionModal"
+                                        th:data-confirm-url="@{/loai-khoan-thu/xoa/{id}(id=${lkt.id})}"
+                                        th:data-item-name="${lkt.tenLoai}"
+                                        data-confirm-title="Xóa loại khoản thu"
+                                        data-confirm-sub="Loại khoản thu bị XÓA VĨNH VIỄN. Có thể lỗi nếu còn khoản thu thuộc loại này. Không thể khôi phục."
+                                        data-confirm-btn-class="btn-danger"
+                                        data-confirm-btn-text="Xóa">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

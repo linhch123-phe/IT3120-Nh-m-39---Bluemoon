@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Quản lý người dùng')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/layout :: sidebar('nguoi-dung')}"></div>
+
+        <main class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Quản lý người dùng</h4>
+                <a th:href="@{/nguoi-dung/them}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i>Thêm người dùng
+                </a>
+            </div>
+
+            <div th:replace="~{fragments/layout :: alerts}"></div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-hover table-bordered mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Tên đăng nhập</th>
+                            <th>Họ tên</th>
+                            <th>Vai trò</th>
+                            <th class="text-center">Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(danhSach)}">
+                            <td colspan="7" class="text-center text-muted py-3">Chưa có người dùng nào.</td>
+                        </tr>
+                        <tr th:each="nd, stat : ${danhSach}">
+                            <td th:text="${stat.count}"></td>
+                            <td>
+                                <span th:text="${nd.tenDangNhap}"></span>
+                                <span th:if="${nd.doiMatKhauLanDau}"
+                                      class="badge bg-warning text-dark ms-1"
+                                      title="Cần đổi mật khẩu lần đầu">
+                                    <i class="bi bi-key"></i>
+                                </span>
+                            </td>
+                            <td th:text="${nd.hoTen}"></td>
+                            <td>
+                                <span th:text="${nd.vaiTro}"
+                                      th:classappend="${nd.vaiTro.name() == 'admin'} ? 'badge bg-danger' : 'badge bg-secondary'">
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span th:if="${nd.active}" class="badge bg-success">Hoạt động</span>
+                                <span th:unless="${nd.active}" class="badge bg-secondary">Vô hiệu</span>
+                            </td>
+                            <td th:text="${nd.ngayTao != null ? #temporals.format(nd.ngayTao, 'dd/MM/yyyy HH:mm') : '—'}"></td>
+                            <td class="text-center">
+                                <a th:href="@{/nguoi-dung/sua/{id}(id=${nd.id})}"
+                                   class="btn btn-warning btn-sm"
+                                   th:aria-label="'Sửa người dùng ' + ${nd.tenDangNhap}">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                <th:block th:with="isSelf=${#authentication?.name == nd.tenDangNhap}">
+                                    <!-- Active → cần confirm trước khi vô hiệu hoá -->
+                                    <button th:if="${!isSelf and nd.active}"
+                                            type="button" class="btn btn-outline-secondary btn-sm"
+                                            data-bs-toggle="modal" data-bs-target="#confirmActionModal"
+                                            th:data-confirm-url="@{/nguoi-dung/doi-trang-thai/{id}(id=${nd.id})}"
+                                            th:data-confirm-title="'Vô hiệu hoá tài khoản'"
+                                            th:data-confirm-message="'Tài khoản ' + ${nd.tenDangNhap} + ' sẽ không thể đăng nhập.'"
+                                            data-confirm-btn-class="btn-warning"
+                                            data-confirm-btn-text="Vô hiệu hoá"
+                                            th:aria-label="'Vô hiệu hoá ' + ${nd.tenDangNhap}"
+                                            title="Vô hiệu hoá">
+                                        <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                                    </button>
+                                    <!-- Inactive → kích hoạt trực tiếp (hành động an toàn) -->
+                                    <form th:if="${!isSelf and !nd.active}"
+                                          th:action="@{/nguoi-dung/doi-trang-thai/{id}(id=${nd.id})}" method="post" class="d-inline">
+                                        <button type="submit" class="btn btn-success btn-sm"
+                                                th:aria-label="'Kích hoạt ' + ${nd.tenDangNhap}"
+                                                title="Kích hoạt">
+                                            <i class="bi bi-check-circle" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                </th:block>
+                                <button type="button" class="btn btn-danger btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="#confirmActionModal"
+                                        th:data-confirm-url="@{/nguoi-dung/xoa/{id}(id=${nd.id})}"
+                                        th:data-item-name="${nd.tenDangNhap}"
+                                        data-confirm-title="Xóa người dùng"
+                                        data-confirm-sub="Tài khoản bị XÓA VĨNH VIỄN. Không thể khôi phục."
+                                        data-confirm-btn-class="btn-danger"
+                                        data-confirm-btn-text="Xóa"
+                                        th:aria-label="'Xóa người dùng ' + ${nd.tenDangNhap}">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

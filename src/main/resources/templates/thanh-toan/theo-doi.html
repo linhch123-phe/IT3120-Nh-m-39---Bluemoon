@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Theo dõi thu phí')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/layout :: sidebar('thanh-toan')}"></div>
+
+        <main class="col-md-10 p-4">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="page-title mb-1">Theo dõi trạng thái thu phí</h3>
+                    <div class="text-muted">Chọn kỳ và khoản thu để xem trạng thái đóng phí từng hộ.</div>
+                </div>
+                <a th:href="@{/thanh-toan}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Quay lại
+                </a>
+            </div>
+
+            <div th:replace="~{fragments/layout :: alerts}"></div>
+
+            <!-- Filter -->
+            <div class="card mb-4">
+                <div class="card-body py-3">
+                    <form method="get" th:action="@{/thanh-toan/theo-doi}"
+                          class="d-flex flex-wrap gap-3 align-items-end form-submit-once">
+                        <div>
+                            <label class="form-label mb-1">Kỳ (tháng/năm)</label>
+                            <input type="month" name="thang" class="form-control" style="min-width:170px"
+                                   th:value="${thangFilter}"/>
+                        </div>
+                        <div>
+                            <label class="form-label mb-1">Khoản thu</label>
+                            <select name="idKhoanThu" class="form-select" style="min-width:260px">
+                                <option value="">-- Chọn khoản thu trong kỳ --</option>
+                                <option th:each="kt : ${khoanThuTrongKy}"
+                                        th:value="${kt.id}"
+                                        th:text="${kt.tenKhoanThu} + ' — ' + ${#numbers.formatDecimal(kt.soTien, 0, 'COMMA', 0, 'POINT')} + ' đ'"
+                                        th:selected="${selectedKhoanThu != null and selectedKhoanThu.id == kt.id}">
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-funnel me-1"></i>Xem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Không có khoản thu trong kỳ -->
+            <div th:if="${#lists.isEmpty(khoanThuTrongKy)}" class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Chưa có dữ liệu cho kỳ này. Vui lòng chọn kỳ khác hoặc tạo khoản thu mới.
+            </div>
+
+            <!-- Có khoản thu được chọn -->
+            <div th:if="${selectedKhoanThu != null}">
+
+                <!-- Info card -->
+                <div class="card p-3 mb-4"
+                     th:with="tongHo=${tatCaHo.size()}, tiLeThu=${tatCaHo.size() > 0 ? (soDaDong * 100 / tatCaHo.size()) : 0}">
+
+                    <!-- Dòng 1: tên khoản thu + tags + đơn giá -->
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                        <span class="fw-bold" th:text="${selectedKhoanThu.tenKhoanThu}"></span>
+                        <div class="d-flex gap-1"
+                             th:if="${selectedKhoanThu.loaiKhoanThu != null and selectedKhoanThu.loaiKhoanThu.loaiApDung != null}">
+                            <span th:if="${selectedKhoanThu.loaiKhoanThu.loaiApDung.name() == 'BAT_BUOC_DINH_KY' or selectedKhoanThu.loaiKhoanThu.loaiApDung.name() == 'BAT_BUOC_DOT_XUAT'}"
+                                  class="fee-tag fee-tag-required"><i class="bi bi-exclamation-circle"></i>Bắt buộc</span>
+                            <span th:if="${selectedKhoanThu.loaiKhoanThu.loaiApDung.name() == 'BAT_BUOC_DINH_KY'}"
+                                  class="fee-tag fee-tag-periodic"><i class="bi bi-arrow-repeat"></i>Định kỳ</span>
+                            <span th:if="${selectedKhoanThu.loaiKhoanThu.loaiApDung.name() == 'BAT_BUOC_DOT_XUAT'}"
+                                  class="fee-tag fee-tag-unexpected"><i class="bi bi-lightning"></i>Đột xuất</span>
+                            <span th:if="${selectedKhoanThu.loaiKhoanThu.loaiApDung.name() == 'TU_NGUYEN'}"
+                                  class="fee-tag fee-tag-voluntary"><i class="bi bi-heart"></i>Tự nguyện</span>
+                        </div>
+                        <span class="ms-auto text-muted small" th:if="${selectedKhoanThu.donGiaPerM2 == null}">
+                            <i class="bi bi-cash-coin me-1"></i>
+                            <span th:text="${#numbers.formatDecimal(selectedKhoanThu.soTien != null ? selectedKhoanThu.soTien : 0, 0, 'COMMA', 0, 'POINT')} + ' đ/hộ'"></span>
+                        </span>
+                        <span class="ms-auto text-muted small" th:if="${selectedKhoanThu.donGiaPerM2 != null}">
+                            <i class="bi bi-rulers me-1"></i>
+                            <span th:text="${#numbers.formatDecimal(selectedKhoanThu.donGiaPerM2, 0, 'COMMA', 0, 'POINT')} + ' đ/m²'"></span>
+                        </span>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">Tỷ lệ thu</small>
+                        <small class="fw-semibold" th:text="${tiLeThu} + '%'">0%</small>
+                    </div>
+                    <div class="report-progress mb-3">
+                        <div class="progress-bar"
+                             th:style="|width: ${tiLeThu > 100 ? 100 : tiLeThu}%|"></div>
+                    </div>
+
+                    <!-- 4 metric cards nhỏ -->
+                    <div class="d-flex gap-2">
+                        <div class="flex-fill text-center py-2 px-1 rounded border">
+                            <div class="metric-label">Tổng hộ</div>
+                            <div class="metric-value" th:text="${tongHo}">0</div>
+                        </div>
+                        <div class="flex-fill text-center py-2 px-1 rounded border">
+                            <div class="metric-label">Đã đóng</div>
+                            <div class="metric-value text-success" th:text="${soDaDong}">0</div>
+                        </div>
+                        <div class="flex-fill text-center py-2 px-1 rounded border">
+                            <div class="metric-label" th:text="${isTuNguyen} ? 'Chưa đăng ký' : 'Còn nợ'">Còn nợ</div>
+                            <div class="metric-value"
+                                 th:classappend="${isTuNguyen} ? '' : 'text-danger'"
+                                 th:text="${soConNo}">0</div>
+                        </div>
+                        <div class="flex-fill text-center py-2 px-1 rounded border">
+                            <div class="metric-label">Tỷ lệ thu</div>
+                            <div class="metric-value" th:text="${tiLeThu} + '%'">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ghi chú tự nguyện -->
+                <div th:if="${isTuNguyen}" class="alert alert-secondary py-2 small mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Đây là khoản phí <strong>tự nguyện</strong> — hộ chưa đăng ký không bị tính là còn nợ.
+                </div>
+
+                <!-- Bảng -->
+                <div class="card">
+                    <div class="card-body table-responsive p-0">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-dark">
+                            <tr>
+                                <th class="ps-3" style="width:40px">#</th>
+                                <th>Căn hộ</th>
+                                <th>Chủ hộ</th>
+                                <th th:if="${selectedKhoanThu.donGiaPerM2 != null}" class="text-end">Diện tích</th>
+                                <th class="text-end">Yêu cầu</th>
+                                <th class="text-end">Đã nộp</th>
+                                <th>Ngày nộp</th>
+                                <th>Phương thức</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-center pe-3">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:if="${#lists.isEmpty(tatCaHo)}">
+                                <td th:colspan="${selectedKhoanThu.donGiaPerM2 != null ? 10 : 9}"
+                                    class="text-center text-muted py-4">
+                                    Chưa có hộ gia đình nào trong hệ thống.
+                                </td>
+                            </tr>
+                            <tr th:each="ho, stat : ${tatCaHo}"
+                                th:with="tt=${paymentMap[ho.id]}"
+                                th:if="${paymentMap[ho.id] != null or isTuNguyen}">
+                                <td class="text-muted ps-3" th:text="${stat.count}"></td>
+                                <td>
+                                    <a th:href="@{/thanh-toan(idHo=${ho.id})}"
+                                       class="fw-bold text-decoration-none"
+                                       th:text="${ho.soCanHo}"></a>
+                                </td>
+                                <td th:text="${ho.chuHo}"></td>
+                                <td th:if="${selectedKhoanThu.donGiaPerM2 != null}" class="text-end">
+                                    <span th:if="${ho.dienTich != null}" th:text="${ho.dienTich} + ' m²'"></span>
+                                    <span th:if="${ho.dienTich == null}" class="text-warning small">Chưa có</span>
+                                </td>
+                                <td class="text-end text-muted"
+                                    th:with="yc=${tt != null ? tt.soTienYeuCauHieuLuc : (selectedKhoanThu.donGiaPerM2 != null and ho.dienTich != null ? ho.dienTich.multiply(selectedKhoanThu.donGiaPerM2) : selectedKhoanThu.soTien)}">
+                                    <span th:if="${yc != null}"
+                                          th:text="${#numbers.formatDecimal(yc, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                </td>
+                                <td class="text-end">
+                                    <span th:if="${tt != null}"
+                                          class="fw-semibold text-success"
+                                          th:text="${#numbers.formatDecimal(tt.soTienDaNop, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+                                    <span th:if="${tt == null}" class="text-muted">--</span>
+                                </td>
+                                <td>
+                                    <span th:if="${tt != null and tt.ngayNop != null}"
+                                          th:text="${#temporals.format(tt.ngayNop, 'dd/MM/yyyy')}"></span>
+                                    <span th:if="${tt == null or tt.ngayNop == null}" class="text-muted">--</span>
+                                </td>
+                                <td>
+                                    <span th:if="${tt != null and tt.phuongThuc != null}"
+                                          th:text="${tt.phuongThuc.tenHienThi}"></span>
+                                    <span th:if="${tt == null or tt.phuongThuc == null}" class="text-muted">--</span>
+                                </td>
+                                <td class="text-center">
+                                    <span th:if="${tt != null and tt.trangThai == T(com.bluemoon.model.TrangThaiThanhToan).DA_DONG}"
+                                          class="badge bg-success">Đã đóng</span>
+                                    <span th:if="${tt != null and tt.trangThai == T(com.bluemoon.model.TrangThaiThanhToan).DONG_DU}"
+                                          class="badge bg-info text-dark">Đóng dư</span>
+                                    <span th:if="${tt != null and tt.trangThai == T(com.bluemoon.model.TrangThaiThanhToan).CON_NO}"
+                                          class="badge bg-warning text-dark">Còn nợ</span>
+                                    <span th:if="${tt == null and !isTuNguyen}"
+                                          class="badge bg-secondary">Chưa ghi nhận</span>
+                                    <span th:if="${tt == null and isTuNguyen}"
+                                          class="badge bg-light text-muted border">Chưa đăng ký</span>
+                                </td>
+                                <td class="text-center pe-3">
+                                    <a th:if="${tt == null or tt.trangThai == T(com.bluemoon.model.TrangThaiThanhToan).CON_NO}"
+                                       th:href="@{/thanh-toan/them(idHo=${ho.id},idKhoan=${selectedKhoanThu.id})}"
+                                       class="btn btn-success btn-sm">
+                                        <i class="bi bi-cash-coin me-1"></i>Thu phí
+                                    </a>
+                                    <a th:if="${tt != null and (tt.trangThai == T(com.bluemoon.model.TrangThaiThanhToan).DA_DONG or tt.trangThai == T(com.bluemoon.model.TrangThaiThanhToan).DONG_DU)}"
+                                       th:href="@{/thanh-toan(idHo=${ho.id})}"
+                                       class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-eye me-1"></i>Xem
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer text-muted small rounded-bottom" th:if="${!#lists.isEmpty(tatCaHo)}">
+                        Tổng: <strong th:text="${tatCaHo.size()}"></strong> căn hộ
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

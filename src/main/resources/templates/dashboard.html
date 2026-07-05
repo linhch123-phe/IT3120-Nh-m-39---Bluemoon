@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Dashboard')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/layout :: sidebar('dashboard')}"></div>
+
+        <main class="col-md-10 p-4" id="main-content">
+            <div th:replace="~{fragments/layout :: alerts}"></div>
+
+            <!-- ── HERO ───────────────────────────────────────── -->
+            <div class="db-hero mb-4 reveal-card" style="animation-delay: 0s">
+
+                <!-- Left: month info -->
+                <div class="db-hero-left">
+                    <div class="db-month-eyebrow">Kỳ thu phí</div>
+                    <div class="db-month-name" th:text="${thang}">2025-01</div>
+                    <div class="db-hero-sub">Tổng quan dân cư, khoản thu và tình hình đóng phí</div>
+                </div>
+
+                <!-- Center: collection ring -->
+                <div class="db-hero-center">
+                    <div class="db-ring-wrap">
+                        <svg viewBox="0 0 100 100" class="db-ring-svg">
+                            <circle cx="50" cy="50" r="40" class="db-ring-bg"/>
+                            <circle cx="50" cy="50" r="40" class="db-ring-fill"
+                                    th:style="'--ring-offset: ' + ${251.3 - tiLeDaThuInt * 2.513} + ';'"/>
+                        </svg>
+                        <div class="db-ring-inner">
+                            <span class="db-ring-pct" th:text="${tiLeDaThuInt} + '%'">0%</span>
+                            <span class="db-ring-cap">Đã thu</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: quick actions -->
+                <div class="db-hero-right">
+                    <a th:href="@{/thanh-toan/no-phi}" class="btn btn-danger btn-sm">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Bảng nợ phí
+                    </a>
+                    <a th:href="@{/thanh-toan/thong-ke}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-bar-chart-line me-1"></i>Thống kê chi tiết
+                    </a>
+                    <a th:href="@{/khoan-thu}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-receipt me-1"></i>Danh sách khoản thu
+                    </a>
+                </div>
+            </div>
+
+            <!-- ── METRIC STRIP ────────────────────────────────── -->
+            <div class="row g-3 mb-4">
+
+                <div class="col-6 col-md-3">
+                    <div class="db-metric-card reveal-card" style="animation-delay: .05s">
+                        <div class="db-metric-icon db-icon-blue">
+                            <i class="bi bi-house-fill"></i>
+                        </div>
+                        <div class="db-metric-body">
+                            <div class="db-metric-val" th:text="${tongHoGiaDinh}">0</div>
+                            <div class="db-metric-lbl">Hộ gia đình</div>
+                            <div class="db-metric-delta">
+                                <span th:if="${deltaHoThangNay > 0}" class="text-success">
+                                    <i class="bi bi-arrow-up-short"></i><span th:text="${deltaHoThangNay}">0</span> mới tháng này
+                                </span>
+                                <span th:if="${deltaHoThangNay == 0}" class="text-muted">Không đổi tháng này</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <div class="db-metric-card reveal-card" style="animation-delay: .10s">
+                        <div class="db-metric-icon db-icon-purple">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div class="db-metric-body">
+                            <div class="db-metric-val" th:text="${tongNhanKhau}">0</div>
+                            <div class="db-metric-lbl">Nhân khẩu</div>
+                            <div class="db-metric-delta">
+                                <span th:if="${deltaNhanKhauThangNay > 0}" class="text-success">
+                                    <i class="bi bi-arrow-up-short"></i><span th:text="${deltaNhanKhauThangNay}">0</span> mới tháng này
+                                </span>
+                                <span th:if="${deltaNhanKhauThangNay == 0}" class="text-muted">Không đổi tháng này</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <div class="db-metric-card reveal-card" style="animation-delay: .14s">
+                        <div class="db-metric-icon db-icon-amber">
+                            <i class="bi bi-receipt"></i>
+                        </div>
+                        <div class="db-metric-body">
+                            <div class="db-metric-val" th:text="${tongKhoanThu}">0</div>
+                            <div class="db-metric-lbl">Khoản thu</div>
+                            <div class="db-metric-delta text-muted">Tổng toàn thời gian</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <div class="db-metric-card reveal-card" style="animation-delay: .18s">
+                        <div class="db-metric-icon db-icon-green">
+                            <i class="bi bi-cash-coin"></i>
+                        </div>
+                        <div class="db-metric-body">
+                            <div class="db-metric-val text-success"
+                                 th:text="${#numbers.formatDecimal(tongTienThangNay, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</div>
+                            <div class="db-metric-lbl">Đã thu tháng này</div>
+                            <div class="db-metric-delta">
+                                <span th:if="${tienTangThangNay}" class="text-success">
+                                    <i class="bi bi-arrow-up-short"></i>Cao hơn tháng trước
+                                </span>
+                                <span th:if="${tienGiamThangNay}" class="text-danger">
+                                    <i class="bi bi-arrow-down-short"></i>Thấp hơn tháng trước
+                                </span>
+                                <span th:if="${!tienTangThangNay and !tienGiamThangNay}" class="text-muted">
+                                    So với tháng trước
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── CHART + SIDE STATS ──────────────────────────── -->
+            <div class="row g-3 mb-4">
+
+                <div class="col-md-8">
+                    <div class="card p-3 h-100 reveal-card" style="animation-delay: .22s">
+                        <h6 class="fw-bold mb-3">
+                            <i class="bi bi-bar-chart me-1"></i>Doanh thu 6 tháng gần nhất
+                        </h6>
+                        <div id="chartLoading" class="d-flex align-items-center justify-content-center gap-2 py-4 text-muted">
+                            <i class="bi bi-hourglass-split"></i>
+                            <small>Đang tải biểu đồ...</small>
+                        </div>
+                        <canvas id="doanhThuChart" style="max-height: 200px;"></canvas>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="d-flex flex-column gap-3 h-100">
+
+                        <div class="db-stat-strip reveal-card" style="animation-delay: .26s">
+                            <div class="db-stat-icon"><i class="bi bi-clipboard-check"></i></div>
+                            <div class="db-stat-body">
+                                <div class="db-stat-lbl">Tổng yêu cầu tháng này</div>
+                                <div class="db-stat-val"
+                                     th:text="${#numbers.formatDecimal(tongTienYeuCau, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</div>
+                            </div>
+                        </div>
+
+                        <div class="db-stat-strip db-stat-strip--danger reveal-card" style="animation-delay: .30s">
+                            <div class="db-stat-icon text-danger"><i class="bi bi-exclamation-circle"></i></div>
+                            <div class="db-stat-body">
+                                <div class="db-stat-lbl">Còn thiếu tháng này</div>
+                                <div class="db-stat-val text-danger"
+                                     th:text="${#numbers.formatDecimal(tongTienConThieu, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</div>
+                            </div>
+                            <a th:href="@{/thanh-toan/no-phi}" class="db-stat-link" title="Xem bảng nợ">
+                                <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+
+                        <div class="db-stat-strip reveal-card" style="animation-delay: .34s">
+                            <div class="db-stat-icon"><i class="bi bi-house-exclamation"></i></div>
+                            <div class="db-stat-body">
+                                <div class="db-stat-lbl">Hộ đang nợ ít nhất 1 khoản</div>
+                                <div class="db-stat-val" th:text="${tongSoHoDangNo}">0</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── PANELS ROW ──────────────────────────────────── -->
+            <div class="row g-3 mb-4">
+
+                <!-- Sắp đến hạn -->
+                <div th:class="${#authorization.expression('hasRole(''admin'')')} ? 'col-md-4' : 'col-md-6'">
+                    <div class="card h-100 reveal-card" style="animation-delay: .38s">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="bi bi-calendar-event me-1"></i>Sắp đến hạn
+                                </h6>
+                                <small class="text-muted">30 ngày tới</small>
+                            </div>
+                            <div th:if="${#lists.isEmpty(sapHanList)}" class="text-center text-muted py-3 small">
+                                <i class="bi bi-check-circle text-success me-1"></i>Không có khoản nào sắp đến hạn.
+                            </div>
+                            <div th:unless="${#lists.isEmpty(sapHanList)}">
+                                <div th:each="kt : ${sapHanList}" class="panel-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="small fw-semibold text-truncate me-2"
+                                             th:text="${kt.tenKhoanThu}" style="max-width: 160px;">Tên khoản</div>
+                                        <span th:if="${kt.hanNop != null}"
+                                              th:class="${kt.hanNop.isBefore(ngayHomNay.plusDays(7))} ? 'badge bg-danger' : 'badge bg-warning text-dark'"
+                                              th:text="${#temporals.format(kt.hanNop, 'dd/MM/yyyy')}">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nợ nhiều nhất -->
+                <div th:class="${#authorization.expression('hasRole(''admin'')')} ? 'col-md-4' : 'col-md-6'">
+                    <div class="card h-100 reveal-card" style="animation-delay: .42s">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Nợ nhiều nhất
+                                </h6>
+                                <a th:href="@{/thanh-toan/no-phi}" class="small">Xem tất cả</a>
+                            </div>
+                            <div th:if="${#lists.isEmpty(topNoList)}" class="text-center text-muted py-3 small">
+                                <i class="bi bi-emoji-smile text-success me-1"></i>Không có hộ nào nợ phí.
+                            </div>
+                            <div th:unless="${#lists.isEmpty(topNoList)}">
+                                <div th:each="ho, stat : ${topNoList}" class="panel-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="small">
+                                            <span class="badge bg-secondary me-1" th:text="${stat.count}">1</span>
+                                            <span class="fw-semibold" th:text="${ho.soCanHo}">A01</span>
+                                            <span class="text-muted ms-1" th:text="${ho.chuHo}">Tên</span>
+                                        </div>
+                                        <span class="small text-danger fw-bold text-nowrap"
+                                              th:text="${#numbers.formatDecimal(ho.tongNo, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hoạt động gần đây (admin only) -->
+                <div class="col-md-4 reveal-card" style="animation-delay: .46s" sec:authorize="hasRole('admin')">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold mb-0">
+                                    <i class="bi bi-clock-history me-1"></i>Hoạt động gần đây
+                                </h6>
+                                <a th:href="@{/audit-log}" class="small">Xem tất cả</a>
+                            </div>
+                            <div th:if="${#lists.isEmpty(hanhDongGanDay)}" class="text-center text-muted py-3 small">
+                                Chưa có hoạt động nào.
+                            </div>
+                            <div th:unless="${#lists.isEmpty(hanhDongGanDay)}">
+                                <div th:each="log : ${hanhDongGanDay}" class="panel-item">
+                                    <div class="d-flex justify-content-between align-items-start gap-2">
+                                        <div class="small flex-grow-1">
+                                            <span th:class="${log.hanhDong == 'Xóa'}   ? 'badge bg-danger me-1' :
+                                                            (${log.hanhDong == 'Tạo'}   ? 'badge bg-success me-1' :
+                                                            (${log.hanhDong == 'Sửa'}   ? 'badge bg-warning text-dark me-1' :
+                                                                                           'badge bg-secondary me-1'))"
+                                                  th:text="${log.hanhDong}">Hành động</span>
+                                            <span class="text-muted" th:text="${log.loaiDoiTuong}">Đối tượng</span>
+                                        </div>
+                                        <small class="text-muted text-nowrap"
+                                               th:text="${#temporals.format(log.thoiGian, 'HH:mm dd/MM')}">--</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── FEE BREAKDOWN TABLE ─────────────────────────── -->
+            <div class="card reveal-card" style="animation-delay: .50s">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-0">
+                                Thống kê khoản đóng góp tháng
+                                <span th:text="${thang}">...</span>
+                            </h5>
+                            <small class="text-muted">Cùng logic với trang thống kê chi tiết.</small>
+                        </div>
+                        <a th:href="@{/thanh-toan/thong-ke}" class="btn btn-primary btn-sm">Xem đầy đủ</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-dark">
+                            <tr>
+                                <th>Tên khoản thu</th>
+                                <th>Loại</th>
+                                <th class="text-end">Yêu cầu</th>
+                                <th class="text-end">Đã thu</th>
+                                <th class="text-end">Còn thiếu</th>
+                                <th class="text-center">Còn nợ</th>
+                                <th class="text-end">Chi tiết</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="row, stat : ${thongKeList}" th:if="${stat.index < 6}">
+                                <td class="fw-semibold" th:text="${row.tenKhoanThu}">Phí vệ sinh</td>
+                                <td th:text="${row.loai}">Bắt buộc</td>
+                                <td class="text-end"
+                                    th:text="${#numbers.formatDecimal(row.tongTienYeuCau, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                <td class="text-end text-success"
+                                    th:text="${#numbers.formatDecimal(row.tongTienDaThu, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                <td class="text-end text-danger"
+                                    th:text="${#numbers.formatDecimal(row.conThieu, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                <td class="text-center fw-bold" th:text="${row.soHoConNo}">0</td>
+                                <td class="text-end">
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       th:href="@{/thanh-toan/theo-doi(idKhoanThu=${row.idKhoanThu})}">Xem</a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(thongKeList)}">
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox me-1"></i>Chưa có khoản thu trong tháng hiện tại.
+                                </td>
+                            </tr>
+                            </tbody>
+                            <tfoot>
+                            <tr class="fw-bold">
+                                <td colspan="2">Tổng</td>
+                                <td class="text-end"
+                                    th:text="${#numbers.formatDecimal(tongTienYeuCau, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                <td class="text-end"
+                                    th:text="${#numbers.formatDecimal(tongTienDaThu, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                <td class="text-end"
+                                    th:text="${#numbers.formatDecimal(tongTienConThieu, 0, 'COMMA', 0, 'POINT')} + ' đ'">0 đ</td>
+                                <td colspan="2" class="text-end"
+                                    th:text="'Hộ đang nợ: ' + ${tongSoHoDangNo}">Hộ đang nợ: 0</td>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+/*<![CDATA[*/
+(function () {
+    const labels = /*[[${chartLabels}]]*/ [];
+    const values = /*[[${chartValues}]]*/ [];
+    let chart = null;
+
+    function getThemeColors() {
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return {
+            barColor:    dark ? 'rgba(167,125,255,0.72)' : 'rgba(22,72,184,0.70)',
+            borderColor: dark ? '#A77DFF'                : '#1648B8',
+            textColor:   dark ? '#B8B2D8'                : '#3A5870',
+            gridColor:   dark ? 'rgba(215,180,255,0.07)' : 'rgba(22,72,184,0.07)'
+        };
+    }
+
+    function renderChart() {
+        const ctx = document.getElementById('doanhThuChart');
+        if (!ctx) return;
+        const c = getThemeColors();
+        if (chart) chart.destroy();
+        document.getElementById('chartLoading')?.remove();
+        chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: c.barColor,
+                    borderColor: c.borderColor,
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: d => new Intl.NumberFormat('vi-VN').format(d.raw) + ' đ'
+                        }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: c.textColor }, grid: { color: c.gridColor } },
+                    y: {
+                        ticks: {
+                            color: c.textColor,
+                            callback: v => new Intl.NumberFormat('vi-VN', {
+                                notation: 'compact', compactDisplay: 'short'
+                            }).format(v)
+                        },
+                        grid: { color: c.gridColor }
+                    }
+                }
+            }
+        });
+    }
+
+    renderChart();
+
+    new MutationObserver(function () { renderChart(); })
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+/*]]>*/
+</script>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

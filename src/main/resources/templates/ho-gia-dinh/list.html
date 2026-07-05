@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Hộ gia đình')}"></head>
+<body>
+
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div th:replace="~{fragments/layout :: sidebar('ho-gia-dinh')}"></div>
+
+        <main class="col-md-10 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Hộ gia đình</h4>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
+                        <i class="bi bi-file-earmark-arrow-up me-1"></i>Import Excel
+                    </button>
+                    <a th:href="@{/ho-gia-dinh/them}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i>Thêm hộ
+                    </a>
+                </div>
+            </div>
+
+            <div th:replace="~{fragments/layout :: alerts}"></div>
+
+            <div th:if="${emptyMsg}" class="alert alert-warning">
+                <i class="bi bi-search me-1"></i><span th:text="${emptyMsg}"></span>
+            </div>
+
+            <!-- Tìm kiếm -->
+            <form th:action="@{/ho-gia-dinh}" method="get" class="mb-3 d-flex gap-2" style="max-width: 400px;">
+                <input type="text" name="search" th:value="${search}" class="form-control form-control-sm"
+                       placeholder="Tìm theo số căn hộ, tên chủ hộ, CCCD..."/>
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-search"></i>
+                </button>
+                <a th:href="@{/ho-gia-dinh}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </form>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                    <table class="table table-hover table-bordered mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Số căn hộ</th>
+                            <th>Chủ hộ</th>
+                            <th>Diện tích (m²)</th>
+                            <th>SĐT</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(danhSach)}">
+                            <td colspan="6" class="text-center py-5">
+                                <i class="bi bi-house-x display-5 text-muted d-block mb-3" aria-hidden="true"></i>
+                                <div class="fw-semibold mb-1">Chưa có hộ gia đình nào</div>
+                                <div class="text-muted small mb-3">Thêm hộ mới hoặc import từ file Excel</div>
+                                <a href="/ho-gia-dinh/them" class="btn btn-primary btn-sm me-2">
+                                    <i class="bi bi-plus-lg me-1"></i>Thêm hộ
+                                </a>
+                                <button class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
+                                    <i class="bi bi-file-earmark-arrow-up me-1"></i>Import Excel
+                                </button>
+                            </td>
+                        </tr>
+                        <tr th:each="hgd, stat : ${danhSach}">
+                            <td th:text="${stat.count}"></td>
+                            <td>
+                                <a th:href="@{/ho-gia-dinh/{id}(id=${hgd.id})}" th:text="${hgd.soCanHo}" class="text-decoration-none fw-semibold"></a>
+                            </td>
+                            <td th:text="${hgd.chuHo}"></td>
+                            <td th:text="${hgd.dienTich}"></td>
+                            <td th:text="${hgd.soDienThoai}"></td>
+                            <td class="text-center">
+                                <a th:href="@{/ho-gia-dinh/{id}(id=${hgd.id})}"
+                                   class="btn btn-info btn-sm text-white"
+                                   th:aria-label="'Xem chi tiết hộ ' + ${hgd.soCanHo}">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </a>
+                                <a th:href="@{/ho-gia-dinh/sua/{id}(id=${hgd.id})}"
+                                   class="btn btn-warning btn-sm"
+                                   th:aria-label="'Sửa hộ ' + ${hgd.soCanHo}">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="#confirmActionModal"
+                                        th:data-confirm-url="@{/ho-gia-dinh/xoa/{id}(id=${hgd.id})}"
+                                        th:data-item-name="'Hộ ' + ${hgd.soCanHo} + ' — ' + ${hgd.chuHo}"
+                                        data-confirm-title="Xóa hộ gia đình"
+                                        data-confirm-sub="Hộ sẽ vào thùng rác và CÓ THỂ KHÔI PHỤC. Yêu cầu: không còn nhân khẩu và không còn nợ phí."
+                                        data-confirm-btn-class="btn-danger"
+                                        data-confirm-btn-text="Xóa"
+                                        th:aria-label="'Xóa hộ ' + ${hgd.soCanHo}">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    </div><!-- /table-responsive -->
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form th:action="@{/ho-gia-dinh/import}" method="post" enctype="multipart/form-data" class="form-submit-once">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Import Hộ gia đình từ Excel</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">Chọn file (.xlsx)</label>
+                        <input class="form-control" type="file" id="excelFile" name="file" accept=".xlsx" required>
+                    </div>
+                    <div class="alert alert-info py-2" style="font-size: 0.85rem">
+                        <strong>Sheet 1 — HoGiaDinh</strong> (cập nhật nếu đã có, thêm mới nếu chưa có)<br>
+                        Cột A: Số căn hộ (*) &nbsp;·&nbsp; B: Chủ hộ (*) &nbsp;·&nbsp; C: Tầng/khu vực<br>
+                        Cột D: Diện tích m² &nbsp;·&nbsp; E: Email &nbsp;·&nbsp; F: Ghi chú
+                        <hr class="my-1">
+                        <strong>Sheet 2 — NhanKhau</strong> (tùy chọn, chỉ thêm mới)<br>
+                        Cột A: Họ tên (*) &nbsp;·&nbsp; B: Ngày sinh (dd/MM/yyyy) &nbsp;·&nbsp; C: Giới tính<br>
+                        Cột D: CCCD &nbsp;·&nbsp; E: Số điện thoại &nbsp;·&nbsp; F: Quan hệ chủ hộ &nbsp;·&nbsp; G: Số căn hộ (*)
+                        <hr class="my-1">
+                        <em>Nếu có bất kỳ lỗi nào, toàn bộ file sẽ bị từ chối.</em>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a th:href="@{/ho-gia-dinh/import/mau}" class="btn btn-outline-secondary me-auto">
+                        <i class="bi bi-download me-1"></i>Tải file mẫu
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: confirmModal}"></div>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
